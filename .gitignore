@@ -1,0 +1,26 @@
+# 원문 공시 ZIP/XML (수백 MB). 드라이브 공유 폴더에서 받아 data/raw/에 풀 것
+data/raw/*
+!data/raw/.gitkeep
+data/sections/*.xml
+data/sections/*.zip
+
+# 키
+.env
+*.key
+
+# 파이썬
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# 임베딩 인덱스, 모델 가중치
+*.faiss
+*.index
+*.gguf
+*.safetensors
+models/
+
+# OS
+.DS_Store
