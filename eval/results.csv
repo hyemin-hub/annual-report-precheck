@@ -1,1 +1,2 @@
 date,method,recall_자기주식,recall_소수주주권,recall_공급계약,recall_재무,fp_per100,evidence_overlap,n_pos,n_neg,note
+2026-10-07,규칙(빈칸·해당없음·글자수),30%,34%,31%,0%,,,114,,전체 31%. 2024년분 정정 전 본문 114행 (no_section 5·err 3 제외)
