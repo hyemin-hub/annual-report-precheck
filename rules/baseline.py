@@ -34,8 +34,14 @@ def main(path):
     df = pd.read_csv(path, sep="\t")
     df["section"] = df["item"].map(section_of)
     df["is_pos"] = df["req"].isin(["여", "예"])
-    df["flag"] = [rule_flag(b, i, r) for b, i, r in zip(df.get("before", [""] * len(df)), df["item"], df["reason"])]
+    df["flag"] = [rule_flag(b, i, r) for b, i, r in zip(df["before"] if "before" in df.columns else [""] * len(df), df["item"], df["reason"])]
     pos = df[df.is_pos]
+    has_text = "before" in df.columns and df["before"].fillna("").str.strip().ne("").any()
+    if has_text:
+        pos = pos[pos["before"].fillna("").str.strip() != ""]
+        print(f"[실제 본문 기준] before 채워진 positive {len(pos)}행만 채점")
+    else:
+        print("[근사치] before 열 없음. 정정사유 키워드로 근사. 이 숫자는 baseline 아님. scripts/fill_before.py 먼저")
     print("항목별 규칙 recall")
     for sec, g in pos.groupby("section"):
         print(f"  {sec}: {g.flag.sum()}/{len(g)} = {g.flag.mean():.0%}")

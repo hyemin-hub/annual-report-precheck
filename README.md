@@ -58,10 +58,13 @@ OpenDART 키: https://opendart.fss.or.kr → 인증키 신청 (이메일 인증,
 # 1. 라벨 수집 (기간 지정). 건당 0.7초 쉬며 돌아감. 348건이면 약 5분
 python scripts/collect_labels.py --start 20250601 --end 20250831 --out data/labels/labels_2025_06-08.tsv
 
-# 2. 규칙 baseline
-python rules/baseline.py data/labels/labels_2025_06-08.tsv
+# 2. 정정 전·후 본문 채우기 (원본 사업보고서 + 정정신고서에서 해당 섹션 추출). 122행 기준 약 20분. 끊기면 다시 실행하면 이어서 함
+python scripts/fill_before.py --labels data/labels/labels_2025_06-08.tsv --out data/labels/labels_2025_06-08_text.tsv --only-pos
 
-# 3. 채점 (어떤 방법이든 pred.tsv만 내면 됨)
+# 3. 규칙 baseline. 2번 결과를 넣어야 실제 본문 기준 점수가 나옴 (라벨 표만 넣으면 근사치라고 표시됨)
+python rules/baseline.py data/labels/labels_2025_06-08_text.tsv
+
+# 4. 채점 (어떤 방법이든 pred.tsv만 내면 됨)
 python eval/score.py --pred llm/pred.tsv --gold data/labels/labels_2025_06-08.tsv --method "규칙+LLM"
 ```
 
@@ -110,24 +113,28 @@ DART에서 [기재정정] 사업보고서를 열면 첫 장이 "정정신고(보
 
 ## 현재 성능
 
-2025.06~08 표본 (positive 122행, 사유 키워드 기준 규칙)
+2024년분 사업보고서, 2025.06~08 정정 표본. positive 122행 중 정정 전 본문이 채워진 114행 기준 (`rules/rule_baseline.ipynb`)
 
 | 항목 | 규칙 baseline recall |
 |---|---|
-| 공급계약 | 20/48 = 42% |
-| 소수주주권 | 11/41 = 27% |
-| 자기주식 | 8/28 = 29% |
-| 재무 | 0/4 |
-| 전체 | 39/122 = 32% |
+| 공급계약 | 15/48 = 31% |
+| 소수주주권 | 14/41 = 34% |
+| 자기주식 | 6/20 = 30% |
+| 재무 | 0/4 = 0% |
+| 전체 | 35/114 = 31% |
 
-나머지 68%가 "칸은 차 있는데 내용 부족". 여기가 LLM 단계의 몫. 갱신은 `eval/results.csv`.
+정정 유형 분포 (정정 전후 길이로 분류, 114행): 부연 추가 39, 소폭 추가 31, 길이 유지(숫자·문구 교체) 22, 빈칸·한 줄 18, 줄어듦 4. 유형별 규칙 recall: 빈칸 100%, 소폭 추가 42%, 길이 유지 14%, 부연 추가 3%. 규칙은 빈칸 유형을 전부 잡고 나머지 "글은 있는데 내용 부족"은 거의 못 잡음 → 이 84%가 LLM 단계의 몫. 재무 0%는 숫자 불일치 유형이라 글자 수 규칙 대상이 아님 → 숫자 대조 단계로 분리.
+
+갱신은 `eval/results.csv`에 한 줄씩.
 
 ## 작업 규칙
 
 - 브랜치: `feat/이름-파트` (예: `feat/hm-eval`). `main` 직접 푸시 금지
-- `main` 머지는 PR + 1명 승인
+- `main` 머지는 PR + 1명 승인. 승인자는 파트별 짝으로 고정 (데이터↔규칙·채점, LLM↔로컬 모델, 문서는 아무나). 짝이 바쁘면 다른 사람이 대신 가능
+- 승인하는 사람이 보는 것: 코드 전체가 아니라 (1) 결과 한 줄이 `eval/results.csv`에 붙었는지 (2) 원문 ZIP·`.env`가 섞여 들어오지 않았는지
 - 코드·프롬프트를 바꾼 PR은 `eval/results.csv`에 결과 한 줄 추가 (PR 템플릿에 칸 있음)
 - 원문 ZIP, 모델 가중치, 임베딩 인덱스, `.env`는 커밋 금지 (`.gitignore`에 있음)
+- 올리는 데이터는 `data/labels/*.tsv`(라벨 표)와 `eval/results.csv`뿐. 원문 ZIP은 공개 자료라 올려도 되지만 용량(한 해분 수백 MB, GitHub 파일당 100MB 제한) 때문에 드라이브에 둠
 
 ## 역할
 
